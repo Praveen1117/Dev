@@ -1,0 +1,84 @@
+# Docker installation on Ubuntu
+
+sudo apt-get update
+sudo curl -fsSL https://get.docker.com -o install-docker.sh
+sudo sh install-docker.sh
+sudo usermod -aG docker $USER
+sudo chmod 666 /var/run/docker.sock
+
+==========================================================
+
+
+docker images======> to get the list of images <br>
+docker ps =========> to get the list of running containers <br>
+docker ps -a ======> to get the list of all  containers [both running and stopped] <br>
+
+docker pull <image-name>================> it will pull images from the repository [docker hub] <br>
+docker push <image-name>================>  it will push  images to the repository [docker hub]  <br>
+
+docker run -it -d <imge-id> =============> img to container <br>
+dockeer stop <continer-name>=========>  to stop docker container <br>
+dockeer start <continer-name>=========>  to start docker container <br>
+dockeer restart <continer-name>=========>  to restart  docker container <br>
+docker rm <container-name> ==========> to remove container <br>
+
+===================================
+How to tag docker images and push to docker hub:
+docker login============>login to docker hub
+docker tag <old-img-name> <new-img-name>  // new img--->dockerhub-username/img-name:tag
+
+--------------
+example:
+docker tag tomcat jas09563/tomcat:v1
+docker push jas09563/tomcat:v1
+---------------------------
+
+
+
+example:
+docker run -d --name jenkins-server -p 8080:8080 jenkins/jenkins:latest
+
+
+================================
+-it ==========>interactive
+-d ===========>detach
+
+
+==============================
+Dockerfile
+===================
+FROM ubuntu:18.04
+MAINTAINER rahul <rahul@example.com>
+RUN apt-get update
+RUN apt-get install default-jdk -y
+RUN apt-get install maven -y
+======================
+docker build -t sai-img .
+docker run -it -d sai-container sai-img:latest
+
+=======================================
+
+to stop all containers in single command
+docker stop container-1-id container-2-id container-3-id container-4-id container-5-id
+(or)
+docker stop $(docker ps -aq)
+
+docker ps -aq=======================> we can get all dokcer containers ids.
+docker images -q===================> to get the all img ids
+
+docker rm -f conteriner-id================> to remove a running container focely 
+
+
+docker exec -it continer-id /bin/bash=========================> to get inside of a container
+
+
+
+
+
+
+
+
+
+
+** reference******
+https://docs.docker.com/get-started/02_our_app/

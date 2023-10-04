@@ -1,0 +1,178 @@
+1)Ansible -------------->
+  configuration managemnt tool
+  push based
+  though ssh
+  agentless
+  manages dest server though passwordless authentication
+
+==========
+Hands-on
+===============
+1) create 2 ubuntu servers
+2) login to server 1
+      sudo adduser master  
+      sudo cat /etc/passwd     ------------------> command to check user details 
+
+      sudo vi /etc/ssh/sshd_config---------->passwordautehntication to 'yes' [previous value 'no']
+      sudo service ssh restart
+      sudo visudo--------------------------->below root ALL=(ALL:ALL) ALL  -----> master ALL=(ALL:ALL) NOPASSWD: ALL ---------------------------->to come out  CTRL+X and then Y then 
+                                                                                                                                                                            hit ENTER
+      su master
+      cd
+      ssh-keygen 
+      ls -la
+      cd .ssh [contains pub and private keys]
+                [ to connect to another server using password ssh test@server2-ip ]
+      
+
+3) login to server 2
+      sudo adduser test
+      sudo vi /etc/ssh/sshd_config---------->passwordautehntication to yes [previous value 'no']
+      sudo service ssh restart
+      sudo visudo--------------------------->below root ALL=(ALL:ALL) ALL  -----> test ALL=(ALL:ALL) NOPASSWD: ALL
+      su test
+      cd
+      sudo mkdir .ssh
+      cd .ssh
+      sudo vi authorized_keys  [paste the pub key of master]
+
+4) execute below command in master [server-1]
+      ssh test@server2-ip
+
+5) install ansible in master
+      sudo apt-add-repository ppa:ansible/ansible
+      sudo apt update
+      sudo apt install ansible -y
+      cd /etc/ansible
+      sudo vi hosts ---------------------> add cliet group and ips
+
+         [client]
+          52.206.67.51 ansible_user=test
+
+
+
+      ansible -m ping client
+      ansible -m ping client -o
+
+Adhoc-commands
+==================
+ansible client -a "ls -l /opt"
+ansible client -a "cat /etc/passwd"
+ansible client -a "sudo touch /opt/xyz"
+ansible client -a "touch /opt/xyz" --become     (or)  ansible client -a "touch /opt/xyz" -b
+ansible client -m shell -a "hostname"
+ansible client -m shell -a "df -h"
+
+sudo touch devops
+ansible client -m copy -a "src=/opt/devops dest=/opt/" --become
+
+ansible client -a "git --version"
+
+ansible client -m apt -a "name=maven state=present" --become
+
+ansible client -m service -a 'name=apache2 state=stopped' --become
+ansible client -m service -a 'name=apache2 state=started' --become
+ansible client -m service -a 'name=apache2 state=restarted' --become
+
+===========================
+
+
+Playbooks
+==================
+re-usability
+
+cd /opt
+mkdir playbooks
+cd playbooks
+touch sample.yaml
+=========================================
+Example 1: Create the file on the target machines or servers as mentioned in the inventory file and the client group
+
+---
+- hosts: client
+  become: true
+  tasks:
+  - name: Create a file
+    file: path=/opt/Rahul.txt state=touch
+
+
+to run a playbook -------------->ansible-playbook sample.yml
+
+============================================================
+Example 2: Create a directory with the mode as 775 and owner/group as slave.
+
+---
+- hosts: client
+  become: true
+  tasks:
+  - name: Create directory
+    file: path=/opt/Australia state=directory mode=775 owner=slave group=slave
+
+=====================================================
+Example 3: Create multiple directories
+
+---
+- hosts: client
+  become: true
+  tasks:
+  - name: Create multiple directories
+    file: path={{item}} state=directory
+    with_items:
+     - '/opt/class1'
+     - '/opt/class2'
+     - '/opt/class3'
+
+==================================================================
+Example : to install java,jenkins in slave servers
+
+  ---
+  - hosts: client
+    become: true 
+    tasks: 
+    - name: add jenkins key 
+      apt_key: 
+        url:  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present 
+
+    - name: add jenkins repo 
+      apt_repository: 
+        repo: 'deb https://pkg.jenkins.io/debian-stable binary/'
+        state: present 
+
+    - name: install java 
+      apt: 
+        name: openjdk-11-jre
+        state: present
+
+    - name: install jenkins 
+      apt: 
+        name: jenkins 
+        state: present 
+
+    - name: start jenkins service 
+      service: 
+        name: jenkins 
+        state: started 
+
+    - name: enable jenkins to start at boot time 
+      service: 
+        name: jenkins 
+        enabled: yes 
+
+
+========================================================
+
+
+****References**********
+https://www.softwaretestinghelp.com/ansible-playbooks-ansible-vaults/
+https://www.youtube.com/watch?v=0FjC4Aacrts
+
+
+
+
+
+
+
+
+
+

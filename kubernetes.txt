@@ -1,0 +1,80 @@
+Prerequisites
+=====================
+
+1) install kubectl -->curl.exe -LO "https://dl.k8s.io/release/v1.28.1/bin/windows/amd64/kubectl.exe"
+
+2) install choco---------> open powershell [run as administrator]----->
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+3) install eksctl -->open powershell [run as administrator]-----> choco install -y eksctl
+
+4) install helm -----> choco install kubernetes-helm
+
+======================================
+Hands-on
+=============================
+
+1) create EKS cluster using below command
+    eksctl create cluster --name demo-cluster --region us-east-1 --fargate
+
+2) updating config file [run below command in command prompt]
+     aws eks update-kubeconfig --region us-east-1 --name demo-cluster
+
+3)creating fargate profile [if we face difficult in pasting in command prompt use git-bash]
+
+eksctl create fargateprofile \
+    --cluster demo-cluster \
+    --region us-east-1 \
+    --name alb-sample-app \
+    --namespace game-2048
+
+4) Deploy the deployment, service and Ingress
+   kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.5.4/docs/examples/2048/2048_full.yaml
+
+5) associate iam-oidc-provider to EKS cluster
+  eksctl utils associate-iam-oidc-provider --cluster demo-cluster --region us-east-1 --approve
+
+6) download iam_policy
+   curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.5.4/docs/install/iam_policy.json
+
+7) Create IAM Policy
+
+aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam_policy.json
+
+8) create IAM role
+
+eksctl create iamserviceaccount \
+  --cluster=demo-cluster \
+  --namespace=kube-system \
+  --name=aws-load-balancer-controller \
+  --role-name AmazonEKSLoadBalancerControllerRole \
+  --attach-policy-arn=arn:aws:iam::619399272393:policy/AWSLoadBalancerControllerIAMPolicy \
+  --region us-east-1 \
+  --approve
+
+9) adding eks repo to helm repositories
+   helm repo add eks https://aws.github.io/eks-charts
+   helm repo update eks
+
+10) installing alb-controller chart
+
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system \
+  --set clusterName=demo-cluster \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --set region=us-east-1 \
+  --set vpcId=vpc-0ae5e798bbccc3c10
+
+11) Now trying to access the ALB DNS , we are able to access the application 
+
+    
+   
+
+
+==============
+Clean-Up:
+===============
+1)delete EKS cluster
+eksctl delete cluster --name demo-cluster --region us-east-1
